@@ -1,12 +1,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include "gauss.h"
+#include "diagonalization.h"
 
-/* in this file B is the matrix that represents the quadratic part of the conic section while
+/* in this file B is the matrix that represents the quadratic part (quadratic form) of the conic section while
  * A is the matrix associated to the conic section. To find the canonical form of the conic,
- * the algorithm uses the othogonal invariants method*/
-
-void jacobi(double **B, double **ACanonical, double **isometry);
+ * the algorithm uses the othogonal invariants method to recognize the conic section*/
 
 
 char recognition(double **A)
@@ -31,98 +30,107 @@ char recognition(double **A)
     
 }
 
-void canonicalForm(double **A, double **ACanonical, double **isometry, double *centre)
+void conicCanonicalForm(double **A, double **ACanonical, double **isometry, double *centreOrVertex, char *type)
 {
     /*isometry is the matrix that represents the translation and the rotation that bring the
      * conic shape in the canonical form*/
 
-    char conicType;
     int i, j;
-    conicType = recognition(A);
-
-    if(conicType != 'p') //the conic has a centre
+    *type = recognition(A);
+    
+    if(determinant(A, 3, 3) == 0)
     {
-        double **centreSystem = (double**) malloc(sizeof(double *) * 2);  //system that solved gives the coordinates of the centre of the conic
-        *centreSystem = (double *) malloc(sizeof(double ) * 2 * 3);
-        for(i = 0; i < 2; i++ )
-        {
-            *(centreSystem + i) = *(centreSystem) + 3 * i;
-        }
+        /*degenerate conic*/
+        return;
+    }
+
+    if(*type != 'p') //the conic has a centre
+    {
+        double **centreSystem = newMatrix(2,3);
 
         for(i = 0; i < 2; i++)
         {
             for(j = 0; j < 3; j++)
             {
-                centreSystem[i][j] = A[i][j];
-            }
-        }
-
-
-        for(i = 0; i < 3; i++)
-        {
-            for(j = 0; j < 3; j++)
-            {
-                if(i != j)
+                if(j == 2)
                 {
-                    ACanonical[i][j] = 0;
+                    centreSystem[i][j] = -1 * A[i][j];
+                }
+                else{
+                    centreSystem[i][j] = A[i][j];
                 }
             }
         }
+        
+        gauss(centreSystem, 2, 3);
+        backward(centreSystem, 2);
+        centreOrVertex[0] = centreSystem[0][2];
+        centreOrVertex[1] = centreSystem[1][2];
+        
+        free(*centreSystem);
+        free(centreSystem);
 
-        jacobi(A,ACanonical,isometry);
+        jacobi(A,ACanonical,isometry,2);
 
         ACanonical[2][2] = determinant(A,3,3) / (ACanonical[0][0] * ACanonical[1][1]);
-
-        backward(centreSystem, 2);
-        centre[0] = centreSystem[0][2];
-        centre[1] = centreSystem[1][2];
+        ACanonical[0][2] = ACanonical[2][0] = ACanonical[1][2] = ACanonical[2][1] = 0;
 
         isometry[2][2] = 1;
-        isometry[0][2] = centre[0];
-        isometry[1][2] = centre[1];
-        isometry[2][0] = 0;
-        isometry[2][1] = 0;
+        isometry[0][2] = centreOrVertex[0];
+        isometry[1][2] = centreOrVertex[1];
+        isometry[2][0] = isometry[2][1] = 0;
+        
     }
     else
     {
-
+        double v[2];/*this will be set as the vertex of the parabola (v[0] = x, v[1] = y) after the rotation (will be used to find the real vertex)*/
+        double a,b,c;
+        
+        jacobi(A, ACanonical, isometry, 2);
+        
+        /*changing the order of the elements in the diagonal of B if ACanonical[0][0] = 0 (and consequently changing the order of the eigenvectors in the isometry matrix)*/
+        
+        if(ACanonical[0][0] == 0)
+        {
+            ACanonical[0][0] = ACanonical[1][1];
+            ACanonical[1][1] = 0;
+            columnSwap(isometry,3,0,1);
+        }
+        
+        /*applying the rotation found with the jacobi method to the first grade part of the canonical matrix (that then will be used to find the vertex of the parabola*/
+        ACanonical[0][2] = ACanonical[2][0] = isometry[0][0] * A[0][2] + isometry[0][1] * A[1][2];
+        ACanonical[1][2] = ACanonical[2][1] = isometry[1][0] * A[0][2] + isometry[1][1] * A[1][2];
+        ACanonical[2][2] = A[2][2];
+        
+        
+        
+        /*given y = aX^2 + bX + c, the x coordinate of the vertex is -b/2a*/
+        a = ACanonical[0][0] / (-2 * ACanonical[1][2]);
+        b = -1 * ACanonical[0][2] / ACanonical[1][2];
+        c = -0.5 * (ACanonical[2][2] / ACanonical[1][2]);
+        
+        v[0] = -1 * b / (2*a);
+        v[1] = a * pow(v[0],2) + b * v[0] + c;
+        
+        /* finding the vertex of the parabola in the original frame of reference (using the inverse eigenvectors matrix) */
+        centreOrVertex[0] = isometry[0][0] * v[0] + isometry[1][0] * v[1];
+        centreOrVertex[1] = isometry[0][1] * v[0] + isometry[1][1] * v[1];
+        
+        isometry[2][2] = 1;
+        isometry[0][2] = centreOrVertex[0];
+        isometry[1][2] = centreOrVertex[1];
+        isometry[2][0] = 0;
+        isometry[2][1] = 0;
+        
+        ACanonical[0][2] = ACanonical[2][0] = 0;
+        ACanonical[2][2] = 0;
+        ACanonical[1][2] = ACanonical[2][1] = sqrt((-1 * determinant(A, 3, 3)) / ACanonical[0][0]);
     }
 }
 
-int sign(double d)
-{
-    if(d > 0)
-    {
-        return 1;
-    }
-    if(d < 0)
-    {
-        return -1;
-    }
-    return 0;
-}
 
 
-void jacobi(double **B, double **ACanonical, double **isometry)
-{
-    double theta, t, c,s;
-    theta = (B[1][1] - B[0][0]) / (2 * B[0][1]);
-    t = sign(theta) / (fabs(theta) + sqrt(pow(theta, 2) + 1));
 
-    ACanonical[0][1] = 0;
-    ACanonical[1][0] = 0;
-
-    ACanonical[0][0] = B[0][0] - (t * B[0][1]);
-    ACanonical[1][1] = B[1][1] + (t * B[0][1]);
-
-    c = 1 / sqrt(pow(t,2) + 1);
-    s = t * c;
-
-    isometry[0][0] = isometry[1][1] = c;
-    isometry[1][0] = -1 * s;
-    isometry[0][1] = s;
-
-}
 
 
 
