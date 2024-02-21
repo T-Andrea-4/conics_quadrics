@@ -1,2 +1,2 @@
 
-extern void jacobi(double **matrix, double **diagonalMatrix, double **eigenVectors, int dim);
+extern void jacobi(int dim, double matrix[dim][dim], double diagonalMatrix[dim][dim], double eigenVectors[dim][dim]);

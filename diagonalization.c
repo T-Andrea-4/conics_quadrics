@@ -1,17 +1,12 @@
-//
-//  diagonalization.c
-//  conics_quadrics
-//
-//  Created by Andrea Turchetto on 04/02/24.
-//
 
 #include "diagonalization.h"
 #include <math.h>
+
 #define MAX_SWEEPS 20
 
-void rotation(double **matrix, int dim, double **eigenVectors, int r, int c);
+void rotation(int dim, double matrix[dim][dim],double eigenVectors[dim][dim], int r, int c);
 int sgn(double d);
-void jacobi(double **matrix, double **diagonalMatrix, double **eigenVectors, int dim);
+void jacobi(int dim, double matrix[dim][dim], double diagonalMatrix[dim][dim], double eigenVectors[dim][dim]);
 
 int sgn(double d)
 {
@@ -23,16 +18,18 @@ int sgn(double d)
     return -1;
 }
 
-void jacobi(double **matrix, double **diagonalMatrix, double **eigenVectors, int dim) /*dim is the number of rows and columns of the matrix. This function modify the diagonalMatrix pointer (prevously allocated as a dynamic matrix)*/
+void jacobi(int dim, double matrix[dim][dim], double diagonalMatrix[dim+1][dim + 1], double eigenVectors[dim][dim]) /*dim is the number of rows and columns of the matrix. This function modify the diagonalMatrix pointer (prevously allocated as a dynamic matrix)*/
 {
     
     int i, j, h, diagonal; /*diagonal is the flag that stores whether  the matrix is diagonal or not */
-    
-    /*initialization of the eigenvectors matrix that initially is the identity matrix*/
+
+    /*initialization of the eigenvectors matrix that initially is the identity matrix and copying matrix in diagonalMatrix*/
     for(i = 0; i < dim; i++)
     {
         for(j = 0; j < dim; j++)
         {
+            diagonalMatrix[i][j] = matrix[i][j];
+
             if(i == j)
             {
                 eigenVectors[i][j] = 1;
@@ -43,20 +40,8 @@ void jacobi(double **matrix, double **diagonalMatrix, double **eigenVectors, int
             }
         }
     }
-    
-
-    
-    /*copying matrix in diagonalMatrix*/
-    for(i = 0; i < dim; i++)
-    {
-        for(j = 0; j < dim; j++)
-        {
-            diagonalMatrix[i][j] = matrix[i][j];
-        }
-    }
-
     diagonal = 0;
-    for(h = 0; h < 50 && !diagonal; h++){
+    for(h = 0; h < MAX_SWEEPS && !diagonal; h++){
         
         diagonal = 1;
         for(i = 0; i < dim; i++)
@@ -66,8 +51,7 @@ void jacobi(double **matrix, double **diagonalMatrix, double **eigenVectors, int
                 if(diagonalMatrix[i][j] != 0.0)
                 {
                     diagonal = 0;
-                    rotation(diagonalMatrix, dim, eigenVectors, i, j);
-
+                    rotation(dim, diagonalMatrix, eigenVectors, i, j);
                 }
             }
         }
@@ -75,17 +59,15 @@ void jacobi(double **matrix, double **diagonalMatrix, double **eigenVectors, int
 }
 
 
-void rotation(double **matrix, int dim, double **eigenVectors, int r, int c)
+void rotation(int dim, double matrix[dim+1][dim+1],double eigenVectors[dim][dim], int r, int c)
 {
     double t, theta, cos, sin, tau, temp;
     int i;
 
     /*finding the angle needed to set the off diagonal element m[r][c] to 0*/
     theta = (matrix[r][r] - matrix[c][c]) / (2 * matrix[r][c]);
-    
-    
+
     t = sgn(theta) / (fabs(theta) + sqrt(pow(theta,2) + 1));
-    
 
     cos = 1 / sqrt(pow(t,2) + 1);
     sin = t * cos;

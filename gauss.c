@@ -1,12 +1,10 @@
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "gauss.h"
 
-int rowSwap(double **matrix, int rowIndex, int colIndex, int rowsNumber, int colsNumber);
+int rowSwap( int rowIndex, int colIndex, int rowsNumber, int colsNumber, double matrix[rowsNumber][colsNumber]);
 int minimum(int a, int b);
 
-int gauss(double **matrix, int rows, int cols)//gauss elimination method
+int gauss(int rows, int cols, double matrix[rows][cols])//gauss elimination method
 {
     int r,c, k, detSign;
     double prevPivot, firstElRow;
@@ -16,10 +14,10 @@ int gauss(double **matrix, int rows, int cols)//gauss elimination method
     for(c = 0; c < min-1 ; c++)
     {
         r = c;
-        detSign *= rowSwap(matrix, r, c, rows, cols); //moves the row with the greater pivot on top
+        detSign *= rowSwap(r, c, rows, cols, matrix); //moves the row with the greater pivot on top
         prevPivot = matrix[c][c]; //prevPivot is the value of the pivot in the column c
 
-        for(r = c+1; r < min; r++)
+        for(r = c + 1; r < min; r++)
         {
             firstElRow = matrix[r][c];
 
@@ -57,10 +55,10 @@ int minimum(int a, int b)
     return b;
 }
 
-int rowSwap(double **matrix, int rowIndex, int colIndex, int rowsNumber, int colsNumber)
+int rowSwap( int rowIndex, int colIndex, int rowsNumber, int colsNumber, double matrix[rowsNumber][colsNumber])
 {
     int i, rowOfMax;
-    double max;
+    double max, temp;
     max = matrix[rowIndex][colIndex];
     rowOfMax = rowIndex;
 
@@ -76,34 +74,23 @@ int rowSwap(double **matrix, int rowIndex, int colIndex, int rowsNumber, int col
     //swapping
     if(rowOfMax != rowIndex)
     {
-        if(rowIndex == 0)
+        for(i = 0; i < colsNumber; i++)
         {
-            for(i = 0; i < colsNumber; i++)
-            {
-                double temp;
-                temp = matrix[rowIndex][i];
-                matrix[rowIndex][i] = matrix[rowOfMax][i];
-                matrix[rowOfMax][i] = temp;
-            }
-        }
-        else
-        {
-            double *temp = *(matrix + rowIndex);
-            *(matrix + rowIndex) = *(matrix + rowOfMax);
-            *(matrix + rowOfMax) = temp;
+            temp = matrix[rowIndex][i];
+            matrix[rowIndex][i] = matrix[rowOfMax][i];
+            matrix[rowOfMax][i] = temp;
         }
         return -1; //returns -1 because the determinant changes sign if a row is swapped with another
     }
     return 1;
 }
 
-double determinant(double **matrix, int rows, int cols)
+double determinant( int rows, int cols, double matrix[rows][cols])
 {
-    double **Umatrix = NULL; //Umatrix is the upper matrix that results after applying gaussian elimination to matrix
+    double Umatrix[rows][cols]; //Umatrix is the upper triangular matrix that results after applying gaussian elimination to matrix
     int detsign, i, j;
     double determinant;
-    
-    Umatrix = (double**) newMatrix(rows, cols);
+
     for(i = 0; i < rows; i++)
     {
         for(j = 0; j < cols; j++)
@@ -112,7 +99,7 @@ double determinant(double **matrix, int rows, int cols)
         }
     }
 
-    detsign = gauss(Umatrix, rows, cols);
+    detsign = gauss( rows, cols, Umatrix);
     determinant = detsign;
 
     for (i = 0; i < rows; i++)
@@ -120,13 +107,10 @@ double determinant(double **matrix, int rows, int cols)
         determinant *= Umatrix[i][i];
     }
 
-    free(*Umatrix);
-    free(Umatrix);
-
     return determinant;
 }
 
-void backward(double **UMatrix, int rowsNumber) //backward substitution in an n x (n+1) upper triangular matrix
+void backward( int rowsNumber,int colsNumber, double UMatrix[rowsNumber][colsNumber]) //backward substitution in an n x (n+1) upper triangular matrix
 {
     int i,j,lastColumn;
     lastColumn = rowsNumber;
@@ -143,7 +127,7 @@ void backward(double **UMatrix, int rowsNumber) //backward substitution in an n 
     }
 }
 
-void columnSwap(double **matrix, int rowsNumber, int col1, int col2)
+void columnSwap( int rowsNumber, int colsNumber, double matrix[rowsNumber][colsNumber], int col1, int col2)
 {
     double temp;
     int i;
@@ -156,10 +140,10 @@ void columnSwap(double **matrix, int rowsNumber, int col1, int col2)
     }
 }
 
-int rank(double **matrix, int dim)
+int rank( int dim, double matrix[dim][dim])
 {
     int found, i, j;
-    double **temp = newMatrix(dim, dim);
+    double temp[dim][dim];
     
     for(i = 0; i < dim; i++)
     {
@@ -169,7 +153,7 @@ int rank(double **matrix, int dim)
         }
     }
 
-    gauss(temp, dim, dim);
+    gauss( dim, dim, temp);
 
     found = 0;
     for(i = dim - 1; i >= 0 && !found; i--)
@@ -185,9 +169,6 @@ int rank(double **matrix, int dim)
         }
         
     }
-
-    free(*temp);
-    free(temp);
     
     if(found)
     {
@@ -199,7 +180,7 @@ int rank(double **matrix, int dim)
 
 }
 
-void transpose(double **matrix, int dim)
+void transpose( int dim, double matrix[dim][dim])
 {
     int i, j;
     double temp;
@@ -218,29 +199,7 @@ void transpose(double **matrix, int dim)
     }
 }
 
-
-double **newMatrix(int rows, int cols) //returns a pointer to a new dynamic matrix
-{
-    int i, j;
-    double **m = (double**) malloc(sizeof(double *) * rows);
-    *m = (double *) malloc(sizeof(double ) * rows * cols    );
-    for(i = 0; i < rows; i++ )
-    {
-        *(m + i) = *m + cols* i;
-    }
-    for(i = 0; i < rows; i++)
-    {
-        for(j = 0; j < cols; j++)
-        {
-            m[i][j] = 0;
-        }
-    }
-    
-    return m;
-
-}
-
-void matrixByVector(double **matrix, double v[], int dim) //computes the product rows by cols between a dim x dim matrix and a dim-long vector
+void matrixByVector( double v[], int dim, double matrix[dim][dim])//computes the product rows by cols between a dim x dim matrix and a dim-long vector
 {
     int i, j;
     double temp[dim];
