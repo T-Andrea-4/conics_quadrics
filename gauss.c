@@ -199,7 +199,7 @@ void transpose( int dim, double matrix[dim][dim])
     }
 }
 
-void matrixByVector( double v[], int dim, double matrix[dim][dim])//computes the product rows by cols between a dim x dim matrix and a dim-long vector
+void matrixByVector( double v[], int dim, double matrix[dim][dim])//computes the product rows by cols between a dim X dim matrix and a dim-long vector
 {
     int i, j;
     double temp[dim];
@@ -217,4 +217,3 @@ void matrixByVector( double v[], int dim, double matrix[dim][dim])//computes the
         }
     }
 }
-

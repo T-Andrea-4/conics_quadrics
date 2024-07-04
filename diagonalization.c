@@ -1,4 +1,3 @@
-
 #include "diagonalization.h"
 #include <math.h>
 
