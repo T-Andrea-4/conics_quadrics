@@ -1,25 +1,28 @@
 #include <math.h>
 #include "gauss.h"
 
+/*various functions about matrixes*/
+
 int rowSwap( int rowIndex, int colIndex, int rowsNumber, int colsNumber, double matrix[rowsNumber][colsNumber]);
 int minimum(int a, int b);
 
-int gauss(int rows, int cols, double matrix[rows][cols])//gauss elimination method
+/*gauss elimination method*/
+int gauss(int rows, int cols, double matrix[rows][cols])
 {
     int r,c, k, detSign;
     double prevPivot, firstElRow;
     int min = minimum(cols, rows);
     detSign = 1;
 
-    for(c = 0; c < min-1 ; c++)
+    for(c = 0; c < min ; c++)
     {
         r = c;
-        detSign *= rowSwap(r, c, rows, cols, matrix); //moves the row with the greater pivot on top
+        detSign *= rowSwap(r, c, rows, cols, matrix); //moves the row with the greater pivot on top (if a row is swapped the sign of the determinat changes)
         prevPivot = matrix[c][c]; //prevPivot is the value of the pivot in the column c
 
-        for(r = c + 1; r < min; r++)
+        for(r = c + 1; r < rows; r++)
         {
-            firstElRow = matrix[r][c];
+            firstElRow = matrix[r][c]; //firstElROw is the first element of the row r
 
             if(prevPivot){
                 for(k = c; k < cols; k++)
@@ -85,6 +88,8 @@ int rowSwap( int rowIndex, int colIndex, int rowsNumber, int colsNumber, double 
     return 1;
 }
 
+/*to compute the determinant this funtion uses an upper triangular matrix (found by applying the gauss method to the given matrix)
+ *and multiplies the diagonal elements in the diagonal to find the detrminant.*/
 double determinant( int rows, int cols, double matrix[rows][cols])
 {
     double Umatrix[rows][cols]; //Umatrix is the upper triangular matrix that results after applying gaussian elimination to matrix
@@ -110,7 +115,9 @@ double determinant( int rows, int cols, double matrix[rows][cols])
     return determinant;
 }
 
-void backward( int rowsNumber,int colsNumber, double UMatrix[rowsNumber][colsNumber]) //backward substitution in an n x (n+1) upper triangular matrix
+/*backward substitution in an n x (n+1) upper triangular matrix: solves the system associated with the matrix.
+ *The solution can be found in the last column of the solved matrix (after this function is applied)*/
+void backward( int rowsNumber,int colsNumber, double UMatrix[rowsNumber][colsNumber])
 {
     int i,j,lastColumn;
     lastColumn = rowsNumber;
@@ -127,6 +134,7 @@ void backward( int rowsNumber,int colsNumber, double UMatrix[rowsNumber][colsNum
     }
 }
 
+/*swaps tho columns of a matrix (col1 and col2)*/
 void columnSwap( int rowsNumber, int colsNumber, double matrix[rowsNumber][colsNumber], int col1, int col2)
 {
     double temp;
@@ -140,6 +148,7 @@ void columnSwap( int rowsNumber, int colsNumber, double matrix[rowsNumber][colsN
     }
 }
 
+/*finds the rank of a dim X dim matrix by applying the gauss elimination method and checking how many rows have only zeroes*/
 int rank( int dim, double matrix[dim][dim])
 {
     int found, i, j;
@@ -152,9 +161,7 @@ int rank( int dim, double matrix[dim][dim])
             temp[i][j] = matrix[i][j];
         }
     }
-
     gauss( dim, dim, temp);
-
     found = 0;
     for(i = dim - 1; i >= 0 && !found; i--)
     {
@@ -167,7 +174,6 @@ int rank( int dim, double matrix[dim][dim])
                 i++;
             }
         }
-        
     }
     
     if(found)
@@ -175,11 +181,9 @@ int rank( int dim, double matrix[dim][dim])
         return i + 1;
     }
     return  0;
-
-
-
 }
 
+/*computes the transpose of a matrix*/
 void transpose( int dim, double matrix[dim][dim])
 {
     int i, j;
@@ -199,7 +203,8 @@ void transpose( int dim, double matrix[dim][dim])
     }
 }
 
-void matrixByVector( double v[], int dim, double matrix[dim][dim])//computes the product rows by cols between a dim X dim matrix and a dim-long vector
+/*computes the product rows by cols between a dim X dim matrix and a dim-long vector*/
+void matrixByVector( double v[], int dim, double matrix[dim][dim])
 {
     int i, j;
     double temp[dim];

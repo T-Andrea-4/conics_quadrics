@@ -5,6 +5,9 @@
 #include "diagonalization.h"
 #include <stdio.h>
 
+
+/*quadricCanonicalForm is a funtion that given the matrix of a quadric surface (A matrix), finds a canonical form of the quadric
+ *(ACanonical matrix), the isometry that maps A to ACanonical (isometry matrix), the center of the conic (center vector) if it has one (withCenter pointer)*/
 void quadricCanonicalForm(double A[4][4], double ACanonical[4][4], double isometry[4][4], double centre[3], int *withCentre)
 {
     int i,j, rkB;
@@ -12,7 +15,7 @@ void quadricCanonicalForm(double A[4][4], double ACanonical[4][4], double isomet
     double traslation[3];
     double rotation[3][3];
 
-    double B[3][3];
+    double B[3][3]; //B is the matrix of the quadratic part of the quadric
     for(i = 0; i < 3; i++)
     {
         for(j = 0; j < 3; j++)
@@ -25,15 +28,6 @@ void quadricCanonicalForm(double A[4][4], double ACanonical[4][4], double isomet
     rkB = rank(3, B);
     
     jacobi(3, B, ACanonical, rotation);
-
-    for(i = 0; i < 3; i++)
-    {
-        for( j = 0; j < 3; j++)
-        {
-            printf("%f", rotation[i][j]);
-        }
-        printf("\n");
-    }
 
     ACanonical[3][3] = A[3][3];
 
@@ -62,12 +56,10 @@ void quadricCanonicalForm(double A[4][4], double ACanonical[4][4], double isomet
                 if(j == 3)
                 {
                     centreSystem[i][j] = -1 * A[i][j];
-                   
                 }
                 else
                 {
                     centreSystem[i][j] = A[i][j];
-                    
                 }
             }
         }
@@ -86,6 +78,7 @@ void quadricCanonicalForm(double A[4][4], double ACanonical[4][4], double isomet
     else if(rkB == 2)
     {
         *withCentre = 0;
+
         /*changing the order of the eigenvalues of A so that it is simpler to find the canonical form*/
         if(ACanonical[2][2] != 0)
         {
